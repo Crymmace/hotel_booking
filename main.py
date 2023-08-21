@@ -1,6 +1,8 @@
 import pandas
 
 df = pandas.read_csv("hotels.csv", dtype={"id": str})
+df_cards = pandas.read_csv("cards.csv", dtype=str).to_dict(orient="records")
+df_cards_security = pandas.read_csv("card_security.csv", dtype=str)
 
 
 class Hotel:
@@ -16,8 +18,6 @@ class Hotel:
         availability = df.loc[df["id"] == self.hotel_id, "available"].squeeze()
         if availability == "yes":
             return True
-        else:
-            return False
 
 
 class Reservation:
@@ -31,9 +31,30 @@ class Reservation:
         
         Here is your booking data:
         Name: {self.customer_name}
-        Hotel: {self.hotel}
+        Hotel: {self.hotel.name}
         """
         return content
+
+
+class CreditCard:
+    def __init__(self, number, expiration, holder, cvc):
+        self.number = number
+        self.expiration = expiration
+        self.holder = holder
+        self.cvc = cvc
+
+    def validate(self):
+        card_data = {"number": self.number, "expiration": self.expiration,
+                     "holder": self.holder, "cvc": self.cvc}
+        if card_data in df_cards:
+            return True
+
+
+class SecureCreditCard(CreditCard):
+    def authenticate(self, given_password):
+        password = df_cards_security.loc[df_cards_security["number"] == self.number, "password"].squeeze()
+        if password == given_password:
+            return True
 
 
 print(df)
@@ -41,10 +62,18 @@ hotel_id = input("Enter the id of the hotel: ")
 hotel = Hotel(hotel_id)
 
 if hotel.available():
-    hotel.book()
-    name = input("Please enter your name: ")
-    reservation = Reservation(name, hotel)
-    print(reservation.generate())
+    credit_card = SecureCreditCard(number="1234567890123456", expiration="12/26",
+                                   holder="JOHN SMITH", cvc="123")
+    if credit_card.validate():
+        if credit_card.authenticate(given_password="mypass"):
+            hotel.book()
+            name = input("Please enter your name: ")
+            reservation = Reservation(name, hotel)
+            print(reservation.generate())
+        else:
+            print("Unable to validate credit card.")
+    else:
+        print("Please enter a valid payment method.")
 else:
     print("Hotel is not available.")
 
