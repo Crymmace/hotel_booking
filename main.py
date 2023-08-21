@@ -36,6 +36,18 @@ class Reservation:
         return content
 
 
+class Spa(Reservation):
+    def reserve_spa(self):
+        content = f"""
+        Thank you for your SPA reservation!
+
+        Here is your SPA booking data:
+        Name: {self.customer_name}
+        Hotel: {self.hotel.name}
+        """
+        return content
+
+
 class CreditCard:
     def __init__(self, number, expiration, holder, cvc):
         self.number = number
@@ -68,8 +80,13 @@ if hotel.available():
         if credit_card.authenticate(given_password="mypass"):
             hotel.book()
             name = input("Please enter your name: ")
-            reservation = Reservation(name, hotel)
+            reservation = Spa(name, hotel)
             print(reservation.generate())
+            spa = input("Would you like to book a spa package? ").lower()
+            if spa == "yes":
+                print(reservation.reserve_spa())
+            else:
+                print("Thank you, come again!")
         else:
             print("Unable to validate credit card.")
     else:
